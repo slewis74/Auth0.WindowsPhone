@@ -139,7 +139,7 @@ namespace Auth0.SDK
         {
             if (this.page != null)
             {
-                await this.page.browserControl.ClearCookiesAsync();
+                await this.page.ClearCookiesAsync();
             }
         }
 
@@ -169,7 +169,6 @@ namespace Auth0.SDK
             // Signal the waiting task that the authentication operation has finished.
             authenticateFinishedEvent.Set();
         }
-
 
         internal Auth0User GetTokenStringFromResponseData(string responseData)
         {

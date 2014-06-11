@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
@@ -21,7 +22,6 @@ namespace Auth0.SDK
     /// </summary>
     public partial class LoginPage : PhoneApplicationPage
     {
-        private const string NoDetailsAvailableMessage = "No details available.";
         private string responseData = string.Empty;
         private string responseErrorDetail = string.Empty;
         private PhoneAuthenticationStatus responseStatus = PhoneAuthenticationStatus.UserCancel;
@@ -29,7 +29,6 @@ namespace Auth0.SDK
         // We need to keep this state to make sure we do the right thing even during
         // normal phone navigation actions (such as going to start screen and back).
         private bool authenticationStarted = false;
-        private bool authenticationFinished = false;
 
         /// <summary>
         /// The AuthenticationBroker associated with the current Login action.
@@ -44,18 +43,6 @@ namespace Auth0.SDK
             InitializeComponent();
 
             BackKeyPress += LoginPage_BackKeyPress;
-            browserControl.Navigating += BrowserControl_Navigating;
-            browserControl.LoadCompleted += BrowserControl_LoadCompleted;
-            browserControl.NavigationFailed += BrowserControl_NavigationFailed;
-        }
-
-        /// <summary>
-        /// Handler for the browser control's load completed event.  We use this to detect when
-        /// to hide the progress bar and show the browser control.
-        /// </summary>
-        void BrowserControl_LoadCompleted(object sender, NavigationEventArgs e)
-        {
-            HideProgressBar();
         }
 
         /// <summary>
@@ -78,10 +65,11 @@ namespace Auth0.SDK
             if (!authenticationStarted)
             {
                 authenticationStarted = true;
-                authenticationFinished = false;
 
                 // Point the browser control to the authentication start page.
-                browserControl.Source = Broker.StartUri;
+                LoginView.Broker = Broker;
+                LoginView.NavigationService = NavigationService;
+                LoginView.StartLogin();
             }
         }
 
@@ -98,11 +86,9 @@ namespace Auth0.SDK
             // finished, then we need to inform the authentication broker of the results.
             // We don't want to stop the operation prematurely, such as when navigating to
             // the start screen.
-            if (Broker.AuthenticationInProgress && authenticationFinished)
+            if (Broker.AuthenticationInProgress)
             {
                 authenticationStarted = false;
-                authenticationFinished = false;
-
                 Broker.OnAuthenticationFinished(responseData, responseStatus, responseErrorDetail);
             }
         }
@@ -114,111 +100,15 @@ namespace Auth0.SDK
         /// </summary>
         void LoginPage_BackKeyPress(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            ShowProgressBar();
-
             responseData = "";
             responseStatus = PhoneAuthenticationStatus.UserCancel;
 
-            authenticationFinished = true;
+            authenticationStarted = false;
         }
 
-        /// <summary>
-        /// Handler for the browser control's navigating event.  We use this to detect when login
-        /// has completed.
-        /// </summary>
-        private void BrowserControl_Navigating(object sender, NavigatingEventArgs e)
+        public async Task ClearCookiesAsync()
         {
-            if (EqualsWithoutQueryString(e.Uri, Broker.EndUri))
-            {
-                if (e.Uri.Query.StartsWith("?error"))
-                {
-                    responseStatus = PhoneAuthenticationStatus.ErrorServer;
-                    responseErrorDetail = NoDetailsAvailableMessage;
-                    var match = Regex.Match(e.Uri.Query, @"\?error=([^&]+)&error_description=([^&]+).*", RegexOptions.None);
-                    if (match.Success)
-                    {
-                        responseErrorDetail = string.Format("Error: {0}. Description: {1}",
-                            HttpUtility.UrlDecode(match.Groups[1].Value),
-                            HttpUtility.UrlDecode(match.Groups[2].Value));
-                    }
-                }
-                else
-                {
-                    responseData = e.Uri.ToString();
-                    responseStatus = PhoneAuthenticationStatus.Success;
-                }
-              
-                authenticationFinished = true;
-
-                // Navigate back now.
-                this.NavigateBackWithProgress();
-            }
-        }
-
-        /// <summary>
-        /// Compares to URIs without taking the Query into account.
-        /// </summary>
-        /// <param name="uri">One of the URIs to compare.</param>
-        /// <param name="otherUri">The other URI to use in the comparison.</param>
-        /// <returns>True if the URIs are equal (except for the query), false otherwise.</returns>
-        private bool EqualsWithoutQueryString(Uri uri, Uri otherUri)
-        {
-            return uri.AbsolutePath == otherUri.AbsolutePath
-                            && uri.Host == otherUri.Host
-                            && uri.Scheme == otherUri.Scheme;
-        }
-
-        /// <summary>
-        /// Handler for the browser control's navigation failed event.  We use this to detect errors
-        /// </summary>
-        private void BrowserControl_NavigationFailed(object sender, NavigationFailedEventArgs e)
-        {
-            WebBrowserNavigationException navEx = e.Exception as WebBrowserNavigationException;
-
-            if (navEx != null)
-            {
-                // Pass along the provided error information.
-                responseErrorDetail = string.Format("Error code: {0}", navEx.StatusCode);
-            }
-            else
-            {
-                // No error information available.
-                responseErrorDetail = NoDetailsAvailableMessage;
-            }
-            responseStatus = PhoneAuthenticationStatus.ErrorHttp;
-
-            authenticationFinished = true;
-            e.Handled = true;
-
-            // Navigate back now.
-            this.NavigateBackWithProgress();
-        }
-
-        /// <summary>
-        /// Displays the progress bar and navigates to the previous page.
-        /// </summary>
-        private void NavigateBackWithProgress()
-        {
-            ShowProgressBar();
-            NavigationService.GoBack();
-        }
-
-        /// <summary>
-        /// Shows the progress bar and hides the browser control.
-        /// </summary>
-        private void ShowProgressBar()
-        {
-            browserControl.Visibility = System.Windows.Visibility.Collapsed;
-            progress.Visibility = System.Windows.Visibility.Visible;
-        }
-
-        /// <summary>
-        /// Hides the progress bar and shows the browser control.
-        /// </summary>
-        private void HideProgressBar()
-        {
-            browserControl.Visibility = System.Windows.Visibility.Visible;
-            progress.Visibility = System.Windows.Visibility.Collapsed;
+            await LoginView.ClearCookiesAsync();
         }
     }
 }

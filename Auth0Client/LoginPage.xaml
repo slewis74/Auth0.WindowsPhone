@@ -6,6 +6,7 @@
     xmlns:shell="clr-namespace:Microsoft.Phone.Shell;assembly=Microsoft.Phone"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:sdk="clr-namespace:Auth0.SDK"
     FontFamily="{StaticResource PhoneFontFamilyNormal}"
     FontSize="{StaticResource PhoneFontSizeNormal}"
     Foreground="{StaticResource PhoneForegroundBrush}"
@@ -14,16 +15,18 @@
     shell:SystemTray.IsVisible="True"
     shell:SystemTray.Opacity="0"
     shell:SystemTray.BackgroundColor="Transparent">
+    
+    <phone:PhoneApplicationPage.Resources>
+        <sdk:InvertVisibilityConverter x:Key="InvertVisibilityConverter"/>
+    </phone:PhoneApplicationPage.Resources>
 
     <!--LayoutRoot is the root grid where all page content is placed-->
     <Grid x:Name="LayoutRoot" Background="Transparent">
-        <ProgressBar 
-            x:Name="progress"  
-            IsIndeterminate="True" />
-        <phone:WebBrowser 
-            x:Name="browserControl" 
-            IsScriptEnabled="True" 
-            Visibility="Collapsed" />
+        <sdk:LoginOverlayControl 
+            x:Name="progress"
+            Visibility="{Binding Visibility, ElementName=LoginView, Converter={StaticResource InvertVisibilityConverter}}"/>
+        <sdk:LoginView 
+            x:Name="LoginView"/>
     </Grid>
 
 </phone:PhoneApplicationPage>

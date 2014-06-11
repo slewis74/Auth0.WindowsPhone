@@ -7,7 +7,13 @@
 
     <!--Application Resources-->
     <Application.Resources>
-        <local:LocalizedStrings xmlns:local="clr-namespace:SampleApp" x:Key="LocalizedStrings"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Auth0Client;component/Resources/LoginResources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <local:LocalizedStrings xmlns:local="clr-namespace:SampleApp" x:Key="LocalizedStrings"/>
+        </ResourceDictionary>
     </Application.Resources>
 
     <Application.ApplicationLifetimeObjects>
