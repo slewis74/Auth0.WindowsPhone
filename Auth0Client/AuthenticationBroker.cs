@@ -83,6 +83,8 @@ namespace Auth0.SDK
         /// <paramref name="endUrl"/>, the browser-based control must stop navigating and
         /// return the response data to the <see cref="AuthenticationBroker"/>.
         /// </param>
+        /// <param name="loginView">If this control is specified it will be used to do the login, 
+        /// otherwise navigation to a page containing a LoginView will occur.</param>
         /// <returns>
         /// The object containing the user profile, JSON Web Token signed and the access_token.
         /// </returns>
@@ -90,24 +92,33 @@ namespace Auth0.SDK
         /// Thrown if the user cancels the authentication flow or an error occurs during
         /// the authentication flow.
         /// </exception>
-        public Task<Auth0User> AuthenticateAsync(Uri startUrl, Uri endUrl)
+        public Task<Auth0User> AuthenticateAsync(Uri startUrl, Uri endUrl, LoginView loginView = null)
         {
             this.StartUri = startUrl;
             this.EndUri = endUrl;
-            PhoneApplicationFrame rootFrame = Application.Current.RootVisual as PhoneApplicationFrame;
-
-            if (rootFrame == null)
-            {
-                throw new InvalidOperationException();
-            }
 
             this.AuthenticationInProgress = true;
 
-            //hook up the broker to the page on the event.
-            rootFrame.Navigated += rootFrame_Navigated;
+            if (loginView == null)
+            {
+                PhoneApplicationFrame rootFrame = Application.Current.RootVisual as PhoneApplicationFrame;
 
-            // Navigate to the login page.
-            rootFrame.Navigate(this.LoginPageUri);
+                if (rootFrame == null)
+                {
+                    throw new InvalidOperationException();
+                }
+
+                //hook up the broker to the page on the event.
+                rootFrame.Navigated += rootFrame_Navigated;
+
+                // Navigate to the login page.
+                rootFrame.Navigate(this.LoginPageUri);
+            }
+            else
+            {
+                loginView.Broker = this;
+                loginView.StartLogin();
+            }
 
             Task<Auth0User> task = Task<Auth0User>.Factory.StartNew(() =>
             {

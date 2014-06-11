@@ -51,10 +51,12 @@ namespace Auth0.SDK
         /// </summary>
         /// <param name="connection">Optional connection name to bypass the login widget</param>
         /// <param name="scope">Optional scope, either 'openid' or 'openid profile'</param>
+        /// <param name="loginView">If this control is specified it will be used to do the login, 
+        /// otherwise navigation to a page containing a LoginView will occur.</param>
         /// <returns>Returns a Task of Auth0User</returns>
-        public async Task<Auth0User> LoginAsync(string connection = "", string scope = "openid")
+        public async Task<Auth0User> LoginAsync(string connection = "", string scope = "openid", LoginView loginView = null)
         {
-            var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope), new Uri(this.CallbackUrl));
+            var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope), new Uri(this.CallbackUrl), loginView);
 
             var endpoint = string.Format(UserInfoEndpoint, this.domain, user.Auth0AccessToken);
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(endpoint);

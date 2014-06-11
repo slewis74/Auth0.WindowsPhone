@@ -52,7 +52,7 @@ namespace Auth0.SDK
         {
             // Make sure that there is an authentication operation in progress.
             // If not, we'll navigate back to the previous page.
-            if (!Broker.AuthenticationInProgress)
+            if (!Broker.AuthenticationInProgress && NavigationService != null)
             {
                 NavigationService.GoBack();
             }
@@ -165,7 +165,10 @@ namespace Auth0.SDK
                 Broker.OnAuthenticationFinished(responseData, responseStatus, responseErrorDetail);
             }
 
-            NavigationService.GoBack();
+            if (NavigationService != null)
+            {
+                NavigationService.GoBack();
+            }
         }
 
         /// <summary>
@@ -174,6 +177,7 @@ namespace Auth0.SDK
         private void ShowProgressBar()
         {
             this.Visibility = Visibility.Collapsed;
+            browserControl.Visibility = Visibility.Collapsed;
         }
 
         /// <summary>
@@ -181,7 +185,11 @@ namespace Auth0.SDK
         /// </summary>
         private void HideProgressBar()
         {
-            this.Visibility = Visibility.Visible;
+            if (Broker.AuthenticationInProgress)
+            {
+                this.Visibility = Visibility.Visible;
+                browserControl.Visibility = Visibility.Visible;
+            }
         }
 
         public async Task ClearCookiesAsync()

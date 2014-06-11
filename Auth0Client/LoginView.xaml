@@ -13,6 +13,7 @@
     <Grid x:Name="LayoutRoot" Background="Transparent">
         <phone:WebBrowser 
             x:Name="browserControl" 
-            IsScriptEnabled="True"/>
+            IsScriptEnabled="True"
+            Visibility="Collapsed"/>
     </Grid>
 </UserControl>
