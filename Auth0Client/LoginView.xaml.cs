@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Navigation;
+using System.Windows.Threading;
 using Microsoft.Phone.Controls;
 
 namespace Auth0.SDK
@@ -171,13 +172,35 @@ namespace Auth0.SDK
             }
         }
 
+        private DispatcherTimer _timer;
+
         /// <summary>
         /// Shows the progress bar and hides the browser control.
         /// </summary>
         private void ShowProgressBar()
         {
+            if (_timer != null)
+            {
+                _timer.Stop();
+                _timer = null;
+            }
+
             this.Visibility = Visibility.Collapsed;
             browserControl.Visibility = Visibility.Collapsed;
+        }
+
+        private void TimerOnTick(object sender, EventArgs eventArgs)
+        {
+            if (_timer == null) return;
+
+            _timer.Stop();
+            _timer = null;
+
+            if (Broker.AuthenticationInProgress)
+            {
+                this.Visibility = Visibility.Visible;
+                browserControl.Visibility = Visibility.Visible;
+            }
         }
 
         /// <summary>
@@ -185,11 +208,12 @@ namespace Auth0.SDK
         /// </summary>
         private void HideProgressBar()
         {
-            if (Broker.AuthenticationInProgress)
-            {
-                this.Visibility = Visibility.Visible;
-                browserControl.Visibility = Visibility.Visible;
-            }
+            if (_timer != null) return;
+
+            _timer = new DispatcherTimer();
+            _timer.Tick += TimerOnTick;
+            _timer.Interval = new TimeSpan(0, 0, 0, 0, 150);
+            _timer.Start();
         }
 
         public async Task ClearCookiesAsync()
